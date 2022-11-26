@@ -1,18 +1,19 @@
-import { useState } from "react";
-export default function DataTable(
-  { 
-    headers, 
-    items = [], // items props 받기, default parameter 빈 배열로 설정
-    selectable = false, // selectable props 받기
-    itemKey, // itemKey props 받기
-    updateSelection, // updateSelection props 받기
-  }) {
+import React, { useState } from 'react';
+
+export default function DataTable({
+  headers,
+  items = [],
+  selectable = false,
+  itemKey,
+  updateSelection = () => {},
+}) {
+  // headers가 있는지 체크하고, 없다면 에러를 던짐
   if (!headers || !headers.length) {
-    throw new Error('<DataTable /> headers is required.')
+    throw new Error('<DataTable /> headers is required.');
   }
   // value 순서에 맞게 테이블 데이터를 출력하기 위한 배열
   const headerKey = headers.map((header) => header.value);
-  // itemKey가 없다면 headers의 첫번째 요소를 선택 
+  // itemKey가 없다면 headers의 첫번째 요소를 선택
   if (!itemKey) {
     itemKey = headerKey[0];
   }
@@ -32,7 +33,10 @@ export default function DataTable(
     setSelection(newSelection);
     updateSelection([...newSelection]);
   };
-  
+  // disabled가 true인 item만 반환하는 함수
+  const getAbledItems = (items) => {
+    return items.filter(({ disabled }) => !disabled);
+  };
   const onChangeSelectAll = (e) => {
     if (e.target.checked) {
       // checked가 true인 경우 전체 선택
@@ -42,15 +46,13 @@ export default function DataTable(
       );
       setSelection(allCheckedSelection);
       updateSelection([...allCheckedSelection]);
-  } else {
+    } else {
       // checked가 false인 경우 전체 선택 해제
       setSelection(new Set());
       updateSelection([]);
     }
   };
-  const getAbledItems = (items) => {
-    return items.filter(({ disabled }) => !disabled );
-  };
+  // 전체 선택 상태 여부
   const isSelectedAll = () => {
     return selection.size === getAbledItems(items).length;
   };
@@ -58,59 +60,52 @@ export default function DataTable(
     <table>
       <thead>
         <tr>
-          {
-            selectable && 
+          {/* 선택 기능을 사용할 때만 바인딩 */}
+          {selectable && (
             <th>
-              <input 
+              <input
                 type="checkbox"
                 checked={isSelectedAll()}
                 onChange={onChangeSelectAll}
               />
             </th>
-          }
-          {
-            headers.map((header) => 
-              <th key={header.text}>
-                {header.text} {/* 컬럼명 바인딩 */}
-              </th> 
-            )
-          }
+          )}
+          {headers.map((header) => (
+            <th key={header.text}>
+              {header.text} {/* 컬럼명 바인딩 */}
+            </th>
+          ))}
         </tr>
       </thead>
       <tbody>
-        {
-          items.map((item, index) => (
-            <tr 
-              key={index} 
-              className={
-              `
-                ${selection.has(item[itemKey]) ? 'select_row': ''} 
-                ${item.disabled ? 'disabled_row' : ''}
-              `
-            }>
-              {/* headerKey를 순회하면서 key를 가져옴 */}
-              {
-                selectable && 
-                  <th>
-                    <input 
-                      type="checkbox"
-                      disabled={item.disabled}
-                      checked={selection.has(item[itemKey])}
-                      onChange={() => onChangeSelect(item[itemKey])}   
-                    />
-                  </th>
-              }
-              { 
-                headerKey.map((key) => 
-                  <td key={key + index}>
-                    {item[key]} {/* key로 객체의 값을 출력 */}
-                  </td>
-                )
-              }
-            </tr>
-          ))
-        }
+        {items.map((item, index) => (
+          <tr
+            key={index}
+            className={`
+            ${selection.has(item[itemKey]) ? 'select_row' : ''} 
+            ${item.disabled ? 'disabled_row' : ''}
+          `}
+          >
+            {/* 선택 기능을 사용할 때만 바인딩 */}
+            {selectable && (
+              <th>
+                <input
+                  type="checkbox"
+                  disabled={item.disabled}
+                  checked={selection.has(item[itemKey])}
+                  onChange={() => onChangeSelect(item[itemKey])}
+                />
+              </th>
+            )}
+            {/* headerKey를 순회하면서 key를 가져옴 */}
+            {headerKey.map((key) => (
+              <td key={key + index}>
+                {item[key]} {/* key로 객체의 값을 출력 */}
+              </td>
+            ))}
+          </tr>
+        ))}
       </tbody>
     </table>
-  )
+  );
 }
